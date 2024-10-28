@@ -7,7 +7,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-gray-800 text-white p-4 flex justify-between items-center">
       <div className="flex items-center">
-        <img src="../assets/mapPin.png" alt="App Logo" className="h-10 mr-3" />
+        <img src={'./images/mapPin.png'} alt="App Logo" className="h-10 mr-3" />
         <span className="text-4xl font-bold">VR group app</span>
       </div>
       <div className="flex items-center">

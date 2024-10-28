@@ -1,26 +1,43 @@
-# Webová aplikace pro měření na mapě
+# VRG vstupní demo
 
-Tato aplikace využívá framework React a knihovnu OpenLayers k vytvoření jednoduché webové aplikace, která umožňuje:
+Táto aplikácia využíva framework React a knižnicu OpenLayers na vytvorenie jednoduchej webovej aplikácie, ktorá umožňuje:
 
-- Zobrazit mapu z online zdroje
-- Poskytovat následující nástroje:
-  - Měření dálky - zobrazení délky a azimutu zadané úsečky v mapě
-  - Měření úhlu - zobrazení velikosti úhlu svíraného dvěma úsečkami s jedním společným bodem
-  - Kreslení a modifikace nakreslené polyčáry
+- Zobraziť mapu z online zdroja
+- Poskytovať nasledujúce nástroje:
+  - Meranie vzdialenosti - zobrazenie dĺžky a azimutu zadanej úsečky na mape
+  - Meranie uhla - zobrazenie veľkosti uhla zvieraného dvoma úsečkami s jedným spoločným bodom
+  - Kreslenie a modifikácia nakreslenej polyčáry
 
-Parametry potřebné pro uvedenou funkcionalitu je možné zadat pomocí myši v mapě anebo číselně pomocí vstupních ovládacích prvků. Tzn. je nutné vytvořit a vhodně použít input controly pro zadání, zobrazení a editaci úhlu a vzdálenosti číselnými hodnotami s tím, že bude možné přepínat jednotky (např. kilometry/míle, stupně/radiány).
+Parametre potrebné pre uvedenú funkcionalitu je možné zadať pomocou myši na mape alebo číselne pomocou vstupných ovládacích prvkov. Tzn. je nutné vytvoriť a vhodne použiť input kontroly pre zadanie, zobrazenie a editáciu uhla a vzdialenosti číselnými hodnotami s tým, že bude možné prepínať jednotky (napr. kilometre/míle, stupne/radiány).
 
+## Ako spustiť aplikáciu
 
-## Jak spustit aplikaci
+### Predpoklady
 
+- Node.js (odporúčaná verzia je 14.x alebo vyššia)
+- npm (Node Package Manager) alebo yarn
 
+### Kroky pre spustenie
 
-### Použité technologie
+Najprv klonujte repozitár do vášho lokálneho počítača:
+
+```sh
+git clone https://github.com/MaggieFoxx/vrg-vstupni-demo.git
+cd vrg-vstupni-demo
+
+npm install
+npm run dev
+```
+Aplikácia by mala byť dostupná na adrese http://localhost:3000.
+
+### Nasadená aplikácia
+Aplikácia je tiež nasadená a dá sa otestovať tu: https://vrg-vstupni-demo.vercel.app/
+
+## Použité technológie
 - React
 - OpenLayers
-- Tailwind CSS (pro stylování)
-- Vercel (pro nasazení)
-
+- Tailwind CSS (pre štýlovanie)
+- Vercel (pre nasadenie)
 
 ### Autor
 Magdaléna Lišková
