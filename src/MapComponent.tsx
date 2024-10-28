@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Feature, Map, MapBrowserEvent, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
@@ -11,11 +11,20 @@ import VectorLayer from "ol/layer/Vector";
 import Overlay from "ol/Overlay";
 import { unByKey } from "ol/Observable";
 import { Coordinate } from "ol/coordinate";
-import { Fill, Stroke, Style } from "ol/style";
-import "./index.css";
-import CircleStyle from "ol/style/Circle";
-import { useFormattedUnits } from "../services/helperFunctions";
 import SideControlMenu from "./SideControlMenu";
+import "./index.css";
+import {
+  createNewLine,
+  getTooltipText,
+  useFormattedUnits,
+} from "../services/helperFunctions";
+import {
+  defaultStyle,
+  measurementStyle,
+  createMeasureTooltipElement,
+  createHelpTooltipElement,
+} from "./style";
+import axios from "axios";
 
 const MapComponent: React.FC = () => {
   const [location, setLocation] = useState<string>("");
@@ -39,38 +48,43 @@ const MapComponent: React.FC = () => {
   >([]);
   const selectedFeatureRef = useRef<Feature<Geometry> | null>(null);
 
-  const { formatLength, calculateAzimuth } = useFormattedUnits();
+  const { formatLength, calculateAzimuth, calculateAngle } =
+    useFormattedUnits();
 
-  const calculateLineMetrics = (
-    line: LineString,
-    start: Coordinate,
-    end: Coordinate
-  ) => {
-    const length = formatLength(line);
-    const azimuth = calculateAzimuth(start, end);
-    console.log(`Length: ${length}, Azimuth: ${azimuth}`);
-    return { length, azimuth };
-  };
+  const calculateLineMetrics = useCallback(
+    (line: LineString, start: Coordinate, end: Coordinate) => {
+      const length = formatLength(line);
+      const azimuth = calculateAzimuth(start, end);
+      return { length, azimuth };
+    },
+    [formatLength, calculateAzimuth]
+  );
 
-  const style = new Style({
-    fill: new Fill({
-      color: "rgba(255, 255, 255, 0.2)",
-    }),
-    stroke: new Stroke({
-      color: "rgba(0, 0, 0, 0.5)",
-      lineDash: [10, 10],
-      width: 2,
-    }),
-    image: new CircleStyle({
-      radius: 5,
-      stroke: new Stroke({
-        color: "rgba(0, 0, 0, 0.7)",
-      }),
-      fill: new Fill({
-        color: "rgba(255, 255, 255, 0.2)",
-      }),
-    }),
-  });
+  const printTooltipMessage = useCallback(
+    (evt: MapBrowserEvent<UIEvent>) => {
+      if (evt.dragging) return;
+      const helpMsg = getTooltipText(mode);
+
+      if (helpTooltipElementRef.current) {
+        helpTooltipElementRef.current.innerHTML = helpMsg;
+        helpTooltipRef.current?.setPosition(evt.coordinate);
+        helpTooltipElementRef.current.classList.remove("hidden");
+      }
+    },
+    [mode]
+  );
+
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.on("pointermove", printTooltipMessage);
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.un("pointermove", printTooltipMessage);
+      }
+    };
+  }, [printTooltipMessage]);
 
   useEffect(() => {
     const osmLayer = new TileLayer({
@@ -80,21 +94,7 @@ const MapComponent: React.FC = () => {
 
     const vectorLayer = new VectorLayer({
       source: drawnFeatures.current,
-      style: new Style({
-        fill: new Fill({
-          color: "rgba(255, 255, 255, 0.2)",
-        }),
-        stroke: new Stroke({
-          color: "#ffcc33",
-          width: 2,
-        }),
-        image: new CircleStyle({
-          radius: 7,
-          fill: new Fill({
-            color: "#ffcc33",
-          }),
-        }),
-      }),
+      style: defaultStyle,
     });
 
     const map = new Map({
@@ -107,9 +107,6 @@ const MapComponent: React.FC = () => {
     });
 
     mapRef.current = map;
-
-    map.on("pointermove", pointerMoveHandler);
-
     map.getViewport().addEventListener("mouseout", () => {
       if (helpTooltipElementRef.current) {
         helpTooltipElementRef.current.classList.add("hidden");
@@ -119,31 +116,28 @@ const MapComponent: React.FC = () => {
   }, []);
 
   const handleSearch = async () => {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?city=${location}&format=json`
-    );
-    const data = await response.json();
-    if (data.length > 0) {
-      const { lon, lat } = data[0];
-      mapRef.current
-        ?.getView()
-        .setCenter(fromLonLat([parseFloat(lon), parseFloat(lat)]));
-      mapRef.current?.getView().setZoom(12);
-    } else {
-      alert("City not found");
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?city=${location}&format=json`
+      );
+      const data = response.data;
+      if (data.length > 0) {
+        const { lon, lat } = data[0];
+        mapRef.current
+          ?.getView()
+          .setCenter(fromLonLat([parseFloat(lon), parseFloat(lat)]));
+        mapRef.current?.getView().setZoom(12);
+      } else {
+        alert("City not found");
+      }
+    } catch (error) {
+      console.error("Error fetching location data:", error);
+      alert("An error occurred while searching for the city");
     }
   };
 
   const createMeasureTooltip = (feature: Feature<Geometry>) => {
-    const measureTooltipElement = document.createElement("div");
-    measureTooltipElement.className = "ol-tooltip ol-tooltip-measure";
-    const measureTooltip = new Overlay({
-      element: measureTooltipElement,
-      offset: [0, -15],
-      positioning: "bottom-center",
-      stopEvent: false,
-      insertFirst: false,
-    });
+    const measureTooltip = createMeasureTooltipElement();
     mapRef.current?.addOverlay(measureTooltip);
     overlaysRef.current.push({ feature, overlay: measureTooltip });
     return measureTooltip;
@@ -153,40 +147,9 @@ const MapComponent: React.FC = () => {
     if (helpTooltipElementRef.current) {
       helpTooltipElementRef.current.remove();
     }
-    helpTooltipElementRef.current = document.createElement("div");
-    helpTooltipElementRef.current.className = "ol-tooltip hidden";
-    helpTooltipRef.current = new Overlay({
-      element: helpTooltipElementRef.current,
-      offset: [15, 0],
-      positioning: "center-left",
-    });
+    helpTooltipRef.current = createHelpTooltipElement(helpTooltipElementRef);
     mapRef.current?.addOverlay(helpTooltipRef.current);
   };
-
-  const pointerMoveHandler = (evt: MapBrowserEvent<UIEvent>) => {
-    if (evt.dragging) return;
-
-    let helpMsg = "Click to start drawing";
-    if (mode === "drawing") {
-      helpMsg = "Click to continue drawing the line";
-    } else if (mode === "deleting") {
-      helpMsg = "Click on a line to delete it";
-    } else if (mode === "measuringAngle") {
-      helpMsg = "Draw two lines to measure the angle";
-    }
-
-    if (helpTooltipElementRef.current) {
-      helpTooltipElementRef.current.innerHTML = helpMsg;
-      helpTooltipRef.current?.setPosition(evt.coordinate);
-      helpTooltipElementRef.current.classList.remove("hidden");
-    }
-  };
-
-  useEffect(() => {
-    if (mapRef.current) {
-      mapRef.current.on("pointermove", pointerMoveHandler);
-    }
-  }, [mode]);
 
   const addMeasureInteraction = () => {
     createHelpTooltip();
@@ -195,18 +158,18 @@ const MapComponent: React.FC = () => {
       const draw = new Draw({
         source: drawnFeatures.current,
         type: "LineString",
-        style: style,
+        style: measurementStyle,
       });
-      setMode("idle");
+      setMode("drawing");
 
       draw.on("drawstart", (evt) => {
-        setMode("drawing");
         const sketch = evt.feature;
         const measureTooltip = createMeasureTooltip(sketch);
         createHelpTooltip();
         let tooltipCoord: Coordinate | undefined;
         const geometry = sketch.getGeometry();
         if (!geometry) return;
+
         if (geometry instanceof LineString) {
           tooltipCoord = geometry.getLastCoordinate();
         }
@@ -221,9 +184,10 @@ const MapComponent: React.FC = () => {
               toLonLat(coordinates[0]),
               toLonLat(coordinates[1])
             );
-            output = `${length} | Azimuth: ${azimuth}`;
-
-            tooltipCoord = geom.getLastCoordinate();
+            if (mode !== "measuringAngle") {
+              output = `${length} | Azimuth: ${azimuth}`;
+              tooltipCoord = geom.getLastCoordinate();
+            }
           }
           if (measureTooltip.getElement()) {
             measureTooltip.getElement()!.innerHTML = output || "";
@@ -247,14 +211,61 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  const addAngleInteraction = () => {
+    createHelpTooltip();
+
+    if (mapRef.current) {
+      const draw = new Draw({
+        source: drawnFeatures.current,
+        type: "LineString",
+        style: measurementStyle,
+      });
+      setMode("measuringAngle");
+
+      draw.on("drawstart", (evt) => {
+        const sketch = evt.feature;
+        const measureTooltip = createMeasureTooltip(sketch);
+        createHelpTooltip();
+        let tooltipCoord: Coordinate | undefined;
+        const geometry = sketch.getGeometry();
+        if (!geometry) return;
+        if (geometry instanceof LineString) {
+          tooltipCoord = geometry.getLastCoordinate();
+        }
+
+        const listener = geometry.on("change", (evt) => {
+          const geom = evt.target;
+          const angle = calculateAngle(geom);
+          const output = `Angle: ${angle}`;
+
+          const coordinates = geom.getCoordinates();
+          tooltipCoord = coordinates[coordinates.length - 2];
+
+          if (measureTooltip.getElement()) {
+            measureTooltip.getElement()!.innerHTML = output || "";
+            measureTooltip.setPosition(tooltipCoord);
+          }
+        });
+
+        draw.on("drawend", () => {
+          unByKey(listener);
+          setMode("idle");
+        });
+      });
+
+      mapRef.current.addInteraction(draw);
+      drawRef.current = draw;
+    }
+  };
+
   const enableDeleteMode = () => {
+    setMode("deleting");
     if (mapRef.current) {
       if (drawRef.current) {
         mapRef.current.removeInteraction(drawRef.current);
         drawRef.current = null;
       }
       mapRef.current.on("singleclick", handleDeleteFeature);
-      setMode("deleting");
     }
   };
 
@@ -275,27 +286,29 @@ const MapComponent: React.FC = () => {
   };
 
   const addLineByCoordinates = () => {
-    const { startLon, startLat, endLon, endLat } = lineCoordinates;
-    const start = fromLonLat([startLon, startLat]);
-    const end = fromLonLat([endLon, endLat]);
-    const line = new LineString([start, end]);
+    const line = createNewLine(lineCoordinates);
+    drawnFeatures.current.addFeature(line);
+    const measureTooltip = createMeasureTooltip(line);
 
-    const feature = new Feature({
-      geometry: line,
-    });
-
-    drawnFeatures.current.addFeature(feature);
-    createMeasureTooltip(feature);
+    const { length, azimuth } = calculateLineMetrics(
+      line.getGeometry() as LineString,
+      [lineCoordinates.startLon, lineCoordinates.startLat],
+      [lineCoordinates.endLon, lineCoordinates.endLat]
+    );
+    measureTooltip.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
+    measureTooltip.setPosition(
+      fromLonLat([lineCoordinates.endLon, lineCoordinates.endLat])
+    );
   };
 
   const enableEditMode = () => {
+    setMode("editing");
     if (mapRef.current) {
       if (drawRef.current) {
         mapRef.current.removeInteraction(drawRef.current);
         drawRef.current = null;
       }
       mapRef.current.on("singleclick", handleEditFeature);
-      setMode("editing");
     }
   };
 
@@ -319,8 +332,8 @@ const MapComponent: React.FC = () => {
     });
   };
 
-  const updateLineOnMap = () => {
-    if (selectedFeatureRef.current) {
+  const updateLineOnMap = useCallback(() => {
+    if (selectedFeatureRef.current && mode === "editing") {
       const geometry = selectedFeatureRef.current.getGeometry() as LineString;
       geometry.setCoordinates([
         fromLonLat([lineCoordinates.startLon, lineCoordinates.startLat]),
@@ -342,13 +355,11 @@ const MapComponent: React.FC = () => {
         overlay.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
       }
     }
-  };
+  }, [lineCoordinates, mode, calculateLineMetrics]);
 
   useEffect(() => {
-    if (mode === "editing") {
-      updateLineOnMap();
-    }
-  }, [lineCoordinates]);
+    updateLineOnMap();
+  }, [lineCoordinates, updateLineOnMap]);
 
   return (
     <div className="flex h-full">
@@ -358,6 +369,7 @@ const MapComponent: React.FC = () => {
           setLocation={setLocation}
           handleSearch={handleSearch}
           addMeasureInteraction={addMeasureInteraction}
+          addAngleInteraction={addAngleInteraction}
           enableDeleteMode={enableDeleteMode}
           enableEditMode={enableEditMode}
           lineCoordinates={lineCoordinates}
@@ -367,7 +379,7 @@ const MapComponent: React.FC = () => {
         />
       </div>
       <div className="w-4/5">
-        <div id="map" className="w-full h-full"/>
+        <div id="map" className="w-full h-full" />
       </div>
     </div>
   );

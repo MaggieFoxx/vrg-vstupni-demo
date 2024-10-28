@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-interface LineCoordinates {
+export interface LineCoordinates {
   startLon: number;
   startLat: number;
   endLon: number;
@@ -38,8 +38,6 @@ export const LineCoordinatesInput: React.FC<LineCoordinatesInputProps> = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLineCoordinates(coordinates);
-    console.log("Coordinates submitted:");
-    console.log(coordinates);
   };
 
   return (
