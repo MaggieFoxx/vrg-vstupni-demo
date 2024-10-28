@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.map-container {
+  @apply m-5 w-full flex justify-center items-center;
+}
+
+.btn {
+  @apply bg-blue-500 text-white font-bold lg:py-4 p-1 lg:px-3 rounded;
+}
+
+.btn:hover {
+  @apply bg-blue-700;
+}
+
+.btn-green {
+  @apply bg-green-500;
+}
+
+.btn-green:hover {
+  @apply bg-green-700;
+}
+
+.btn-red {
+  @apply bg-red-500;
+}
+
+.btn-red:hover {
+  @apply bg-red-700;
+}
+
+.btn-yellow {
+  @apply bg-yellow-500;
+}
+
+.btn-yellow:hover {
+  @apply bg-yellow-700;
+}
+
+.ol-tooltip {
+  @apply relative bg-black bg-opacity-50 rounded text-white px-2 py-1 opacity-70 whitespace-nowrap text-xs cursor-default select-none;
+}
+
+.ol-tooltip-measure {
+  @apply opacity-100 font-bold;
+}
+
+.ol-tooltip-static {
+  @apply bg-yellow-400 text-black border border-white;
+}
+
+.ol-tooltip-measure::before,
+.ol-tooltip-static::before {
+  border-top: 6px solid rgba(0, 0, 0, 0.5);
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  margin-left: -7px;
+  left: 50%;
+}
+
+.ol-tooltip-static::before {
+  border-top-color: #ffcc33;
+}
