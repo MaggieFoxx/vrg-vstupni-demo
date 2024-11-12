@@ -24,10 +24,8 @@ import {
   createMeasureTooltipElement,
   createHelpTooltipElement,
 } from "./style";
-import axios from "axios";
 
 const MapComponent: React.FC = () => {
-  const [location, setLocation] = useState<string>("");
   const [mode, setMode] = useState<
     "idle" | "drawing" | "deleting" | "editing" | "measuringAngle"
   >("idle");
@@ -115,27 +113,6 @@ const MapComponent: React.FC = () => {
     return () => map.setTarget("");
   }, []);
 
-  const handleSearch = async () => {
-    try {
-      const response = await axios.get(
-        `https://nominatim.openstreetmap.org/search?city=${location}&format=json`
-      );
-      const data = response.data;
-      if (data.length > 0) {
-        const { lon, lat } = data[0];
-        mapRef.current
-          ?.getView()
-          .setCenter(fromLonLat([parseFloat(lon), parseFloat(lat)]));
-        mapRef.current?.getView().setZoom(12);
-      } else {
-        alert("City not found");
-      }
-    } catch (error) {
-      console.error("Error fetching location data:", error);
-      alert("An error occurred while searching for the city");
-    }
-  };
-
   const createMeasureTooltip = (feature: Feature<Geometry>) => {
     const measureTooltip = createMeasureTooltipElement();
     mapRef.current?.addOverlay(measureTooltip);
@@ -151,7 +128,7 @@ const MapComponent: React.FC = () => {
     mapRef.current?.addOverlay(helpTooltipRef.current);
   };
 
-  const addMeasureInteraction = () => {
+  const addInteraction = (interactionType: "distance" | "angle") => {
     createHelpTooltip();
 
     if (mapRef.current) {
@@ -160,7 +137,7 @@ const MapComponent: React.FC = () => {
         type: "LineString",
         style: measurementStyle,
       });
-      setMode("drawing");
+      setMode(interactionType === "distance" ? "drawing" : "measuringAngle");
 
       draw.on("drawstart", (evt) => {
         const sketch = evt.feature;
@@ -179,14 +156,22 @@ const MapComponent: React.FC = () => {
           let output;
           if (geom instanceof LineString) {
             const coordinates = geom.getCoordinates();
-            const { length, azimuth } = calculateLineMetrics(
-              geom,
-              toLonLat(coordinates[0]),
-              toLonLat(coordinates[1])
-            );
-            if (mode !== "measuringAngle") {
-              output = `${length} | Azimuth: ${azimuth}`;
-              tooltipCoord = geom.getLastCoordinate();
+            if (interactionType === "distance") {
+              const { length, azimuth } = calculateLineMetrics(
+                geom,
+                toLonLat(coordinates[0]),
+                toLonLat(coordinates[1])
+              );
+              if (mode !== "measuringAngle") {
+                output = `${length} | Azimuth: ${azimuth}`;
+                tooltipCoord = geom.getLastCoordinate();
+              }
+
+            } else {
+              const angle = calculateAngle(geom);
+              output = `Angle: ${angle}`;
+              const coordinates = geom.getCoordinates();
+              tooltipCoord = coordinates[coordinates.length - 2];
             }
           }
           if (measureTooltip.getElement()) {
@@ -211,53 +196,6 @@ const MapComponent: React.FC = () => {
     }
   };
 
-  const addAngleInteraction = () => {
-    createHelpTooltip();
-
-    if (mapRef.current) {
-      const draw = new Draw({
-        source: drawnFeatures.current,
-        type: "LineString",
-        style: measurementStyle,
-      });
-      setMode("measuringAngle");
-
-      draw.on("drawstart", (evt) => {
-        const sketch = evt.feature;
-        const measureTooltip = createMeasureTooltip(sketch);
-        createHelpTooltip();
-        let tooltipCoord: Coordinate | undefined;
-        const geometry = sketch.getGeometry();
-        if (!geometry) return;
-        if (geometry instanceof LineString) {
-          tooltipCoord = geometry.getLastCoordinate();
-        }
-
-        const listener = geometry.on("change", (evt) => {
-          const geom = evt.target;
-          const angle = calculateAngle(geom);
-          const output = `Angle: ${angle}`;
-
-          const coordinates = geom.getCoordinates();
-          tooltipCoord = coordinates[coordinates.length - 2];
-
-          if (measureTooltip.getElement()) {
-            measureTooltip.getElement()!.innerHTML = output || "";
-            measureTooltip.setPosition(tooltipCoord);
-          }
-        });
-
-        draw.on("drawend", () => {
-          unByKey(listener);
-          setMode("idle");
-        });
-      });
-
-      mapRef.current.addInteraction(draw);
-      drawRef.current = draw;
-    }
-  };
-
   const enableDeleteMode = () => {
     setMode("deleting");
     if (mapRef.current) {
@@ -267,6 +205,7 @@ const MapComponent: React.FC = () => {
       }
       mapRef.current.on("singleclick", handleDeleteFeature);
     }
+    setMode("idle");
   };
 
   const handleDeleteFeature = (evt: MapBrowserEvent<UIEvent>) => {
@@ -365,17 +304,15 @@ const MapComponent: React.FC = () => {
     <div className="flex h-full">
       <div className="w-1/5">
         <SideControlMenu
-          location={location}
-          setLocation={setLocation}
-          handleSearch={handleSearch}
-          addMeasureInteraction={addMeasureInteraction}
-          addAngleInteraction={addAngleInteraction}
+          addMeasureInteraction={() => addInteraction("distance")}
+          addAngleInteraction={() => addInteraction("angle")}
           enableDeleteMode={enableDeleteMode}
           enableEditMode={enableEditMode}
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}
           addLineByCoordinates={addLineByCoordinates}
           updateLineOnMap={updateLineOnMap}
+          mapRef={mapRef}
         />
       </div>
       <div className="w-4/5">

@@ -1,5 +1,6 @@
 import React from 'react';
-import { useUnits, DistanceUnit, AngleUnit } from './UnitsContext';
+import { DistanceUnit, AngleUnit } from './UnitsContext';
+import { useUnits } from './UseUnits';
 
 const Navbar: React.FC = () => {
   const { distanceUnit, setDistanceUnit, angleUnit, setAngleUnit } = useUnits();

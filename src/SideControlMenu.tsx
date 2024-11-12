@@ -1,10 +1,10 @@
 import React from "react";
 import { LineCoordinates, LineCoordinatesInput } from "./LineCoordinatesInput";
+import SearchLocation from "./SearchLocation";
+import { Map } from 'ol';
+
 
 interface SideControlMenuProps {
-  location: string;
-  setLocation: (location: string) => void;
-  handleSearch: () => void;
   addMeasureInteraction: () => void;
   addAngleInteraction: () => void;
   enableDeleteMode: () => void;
@@ -13,12 +13,10 @@ interface SideControlMenuProps {
   setLineCoordinates: (coordinates: LineCoordinates) => void;
   addLineByCoordinates: () => void;
   updateLineOnMap: () => void;
+  mapRef: React.MutableRefObject<null | Map>;
 }
 
 const SideControlMenu: React.FC<SideControlMenuProps> = ({
-  location,
-  setLocation,
-  handleSearch,
   addMeasureInteraction,
   addAngleInteraction,
   enableDeleteMode,
@@ -27,21 +25,11 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
   setLineCoordinates,
   addLineByCoordinates,
   updateLineOnMap,
+  mapRef
 }) => {
   return (
     <div className="h-full bg-gray-800 text-white p-4 flex flex-col justify-between">
-      <div>
-        <input
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter location"
-          className="border p-2 mb-4 w-full text-black"
-        />
-        <button className="btn w-full mb-2" onClick={handleSearch}>
-          Search location
-        </button>
-      </div>
+      <SearchLocation mapRef={mapRef} />
       <div>
         <h2 className="text-xl font-semibold">Add new measurements:</h2>
         <div className="flex flex-col md:flex-row my-5">
