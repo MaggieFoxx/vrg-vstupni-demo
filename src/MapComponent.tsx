@@ -13,22 +13,19 @@ import { unByKey } from "ol/Observable";
 import { Coordinate } from "ol/coordinate";
 import SideControlMenu from "./SideControlMenu";
 import "./index.css";
-import {
-  createNewLine,
-  getTooltipText,
-  useFormattedUnits,
-} from "../services/helperFunctions";
+import { useFormattedUnits } from "../services/helperUnitCalculationFunctions";
+import { createNewLine } from "../services/helperLineFunctions";
 import {
   defaultStyle,
   measurementStyle,
   createMeasureTooltipElement,
   createHelpTooltipElement,
 } from "./style";
+import { enableModifyMode } from "./MapModifyInteraction";
+import { Mode, getTooltipText } from "../types/ModeEnum";
 
 const MapComponent: React.FC = () => {
-  const [mode, setMode] = useState<
-    "idle" | "drawing" | "deleting" | "editing" | "measuringAngle"
-  >("idle");
+  const [mode, setMode] = useState<Mode>(Mode.IDLE);
   const [lineCoordinates, setLineCoordinates] = useState({
     startLon: 0,
     startLat: 0,
@@ -137,7 +134,9 @@ const MapComponent: React.FC = () => {
         type: "LineString",
         style: measurementStyle,
       });
-      setMode(interactionType === "distance" ? "drawing" : "measuringAngle");
+      setMode(
+        interactionType === "distance" ? Mode.DRAWING : Mode.MEASURING_ANGLE
+      );
 
       draw.on("drawstart", (evt) => {
         const sketch = evt.feature;
@@ -162,11 +161,10 @@ const MapComponent: React.FC = () => {
                 toLonLat(coordinates[0]),
                 toLonLat(coordinates[1])
               );
-              if (mode !== "measuringAngle") {
+              if (mode !== Mode.MEASURING_ANGLE) {
                 output = `${length} | Azimuth: ${azimuth}`;
                 tooltipCoord = geom.getLastCoordinate();
               }
-
             } else {
               const angle = calculateAngle(geom);
               output = `Angle: ${angle}`;
@@ -187,7 +185,7 @@ const MapComponent: React.FC = () => {
             measureTooltip.setOffset([0, -7]);
           }
           unByKey(listener);
-          setMode("idle");
+          setMode(Mode.IDLE);
         });
       });
 
@@ -197,7 +195,7 @@ const MapComponent: React.FC = () => {
   };
 
   const enableDeleteMode = () => {
-    setMode("deleting");
+    setMode(Mode.DELETING);
     if (mapRef.current) {
       if (drawRef.current) {
         mapRef.current.removeInteraction(drawRef.current);
@@ -205,7 +203,7 @@ const MapComponent: React.FC = () => {
       }
       mapRef.current.on("singleclick", handleDeleteFeature);
     }
-    setMode("idle");
+    setMode(Mode.IDLE);
   };
 
   const handleDeleteFeature = (evt: MapBrowserEvent<UIEvent>) => {
@@ -240,39 +238,31 @@ const MapComponent: React.FC = () => {
     );
   };
 
-  const enableEditMode = () => {
-    setMode("editing");
-    if (mapRef.current) {
-      if (drawRef.current) {
-        mapRef.current.removeInteraction(drawRef.current);
-        drawRef.current = null;
-      }
-      mapRef.current.on("singleclick", handleEditFeature);
-    }
-  };
+  // const enableEditMode = () => {
+  //   setMode(Mode.EDITING);
+  //   if (mapRef.current) {
+  //     if (drawRef.current) {
+  //       mapRef.current.removeInteraction(drawRef.current);
+  //       drawRef.current = null;
+  //     }
+  //     mapRef.current.on("singleclick", handleEditFeature);
+  //   }
+  // };
 
-  const handleEditFeature = (evt: MapBrowserEvent<UIEvent>) => {
-    mapRef.current?.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
-      if (feature && layer instanceof VectorLayer) {
-        const geometry = feature.getGeometry();
-        if (geometry instanceof LineString) {
-          const coordinates = geometry.getCoordinates();
-          const start = toLonLat(coordinates[0]);
-          const end = toLonLat(coordinates[coordinates.length - 1]);
-          setLineCoordinates({
-            startLon: start[0],
-            startLat: start[1],
-            endLon: end[0],
-            endLat: end[1],
-          });
-          selectedFeatureRef.current = feature as Feature<Geometry>;
-        }
-      }
-    });
-  };
+  // const handleEditFeature = (evt: MapBrowserEvent<UIEvent>) => {
+  //   mapRef.current?.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
+  //     if (feature && layer instanceof VectorLayer) {
+  //       const coordinates = getLineCoordinates(feature as Feature<Geometry>);
+  //       if (coordinates) {
+  //         setLineCoordinates(coordinates);
+  //         selectedFeatureRef.current = feature as Feature<Geometry>;
+  //       }
+  //     }
+  //   });
+  // };
 
   const updateLineOnMap = useCallback(() => {
-    if (selectedFeatureRef.current && mode === "editing") {
+    if (selectedFeatureRef.current && mode === Mode.EDITING) {
       const geometry = selectedFeatureRef.current.getGeometry() as LineString;
       geometry.setCoordinates([
         fromLonLat([lineCoordinates.startLon, lineCoordinates.startLat]),
@@ -307,7 +297,17 @@ const MapComponent: React.FC = () => {
           addMeasureInteraction={() => addInteraction("distance")}
           addAngleInteraction={() => addInteraction("angle")}
           enableDeleteMode={enableDeleteMode}
-          enableEditMode={enableEditMode}
+          enableEditMode={() =>
+            enableModifyMode(
+              mapRef,
+              drawRef,
+              drawnFeatures,
+              setLineCoordinates,
+              setMode,
+              updateLineOnMap,
+              selectedFeatureRef
+            )
+          }
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}
           addLineByCoordinates={addLineByCoordinates}

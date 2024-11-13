@@ -1,9 +1,6 @@
 import { getLength } from "ol/sphere";
 import { LineString } from "ol/geom";
 import { Coordinate } from "ol/coordinate";
-import { fromLonLat } from "ol/proj";
-import Feature from "ol/Feature";
-import { LineCoordinates } from "../src/LineCoordinatesInput";
 import { useUnits } from "../src/UseUnits";
 
 const MILES_TO_METERS = 1609.34;
@@ -77,31 +74,4 @@ export const useFormattedUnits = () => {
       : angleDegrees.toFixed(DECIMAL_PLACES) + "°";
   };
   return { formatLength, calculateAzimuth, calculateAngle };
-};
-
-export const getTooltipText = (mode: string): string => {
-  let helpMsg = "Clict on the button to choose functionality";
-  if (mode === "drawing") {
-    helpMsg = "Click to continue drawing the line";
-  } else if (mode === "deleting") {
-    helpMsg = "Click on a line to delete it";
-  } else if (mode === "editing") {
-    helpMsg = "Click on a line to edit";
-  } else if (mode === "measuringAngle") {
-    helpMsg = "Draw two lines to measure the angle";
-  } else { 
-    helpMsg = "Clict on the button to choose functionality";
-  }
-  return helpMsg;
-};
-
-export const createNewLine = (lineCoordinates: LineCoordinates) => {
-  const { startLon, startLat, endLon, endLat } = lineCoordinates;
-  const start = fromLonLat([startLon, startLat]);
-  const end = fromLonLat([endLon, endLat]);
-  const line = new LineString([start, end]);
-
-  return new Feature({
-    geometry: line,
-  });
 };
