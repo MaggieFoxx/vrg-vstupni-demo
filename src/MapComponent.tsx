@@ -14,7 +14,11 @@ import { Coordinate } from "ol/coordinate";
 import SideControlMenu from "./SideControlMenu";
 import "./index.css";
 import { useFormattedUnits } from "../services/helperUnitCalculationFunctions";
-import { createNewLine } from "../services/helperLineFunctions";
+import {
+  calculateLineMetrics,
+  createNewLine,
+  getLineCoordinates,
+} from "../services/helperLineFunctions";
 import {
   defaultStyle,
   measurementStyle,
@@ -46,11 +50,15 @@ const MapComponent: React.FC = () => {
   const { formatLength, calculateAzimuth, calculateAngle } =
     useFormattedUnits();
 
-  const calculateLineMetrics = useCallback(
+  const calculateLineMetricsCallback = useCallback(
     (line: LineString, start: Coordinate, end: Coordinate) => {
-      const length = formatLength(line);
-      const azimuth = calculateAzimuth(start, end);
-      return { length, azimuth };
+      return calculateLineMetrics(
+        line,
+        start,
+        end,
+        formatLength,
+        calculateAzimuth
+      );
     },
     [formatLength, calculateAzimuth]
   );
@@ -156,7 +164,7 @@ const MapComponent: React.FC = () => {
           if (geom instanceof LineString) {
             const coordinates = geom.getCoordinates();
             if (interactionType === "distance") {
-              const { length, azimuth } = calculateLineMetrics(
+              const { length, azimuth } = calculateLineMetricsCallback(
                 geom,
                 toLonLat(coordinates[0]),
                 toLonLat(coordinates[1])
@@ -227,7 +235,7 @@ const MapComponent: React.FC = () => {
     drawnFeatures.current.addFeature(line);
     const measureTooltip = createMeasureTooltip(line);
 
-    const { length, azimuth } = calculateLineMetrics(
+    const { length, azimuth } = calculateLineMetricsCallback(
       line.getGeometry() as LineString,
       [lineCoordinates.startLon, lineCoordinates.startLat],
       [lineCoordinates.endLon, lineCoordinates.endLat]
@@ -238,28 +246,28 @@ const MapComponent: React.FC = () => {
     );
   };
 
-  // const enableEditMode = () => {
-  //   setMode(Mode.EDITING);
-  //   if (mapRef.current) {
-  //     if (drawRef.current) {
-  //       mapRef.current.removeInteraction(drawRef.current);
-  //       drawRef.current = null;
-  //     }
-  //     mapRef.current.on("singleclick", handleEditFeature);
-  //   }
-  // };
+  const enableEditMode = () => {
+    setMode(Mode.EDITING);
+    if (mapRef.current) {
+      if (drawRef.current) {
+        mapRef.current.removeInteraction(drawRef.current);
+        drawRef.current = null;
+      }
+      mapRef.current.on("singleclick", handleEditFeature);
+    }
+  };
 
-  // const handleEditFeature = (evt: MapBrowserEvent<UIEvent>) => {
-  //   mapRef.current?.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
-  //     if (feature && layer instanceof VectorLayer) {
-  //       const coordinates = getLineCoordinates(feature as Feature<Geometry>);
-  //       if (coordinates) {
-  //         setLineCoordinates(coordinates);
-  //         selectedFeatureRef.current = feature as Feature<Geometry>;
-  //       }
-  //     }
-  //   });
-  // };
+  const handleEditFeature = (evt: MapBrowserEvent<UIEvent>) => {
+    mapRef.current?.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
+      if (feature && layer instanceof VectorLayer) {
+        const coordinates = getLineCoordinates(feature as Feature<Geometry>);
+        if (coordinates) {
+          setLineCoordinates(coordinates);
+          selectedFeatureRef.current = feature as Feature<Geometry>;
+        }
+      }
+    });
+  };
 
   const updateLineOnMap = useCallback(() => {
     if (selectedFeatureRef.current && mode === Mode.EDITING) {
@@ -276,7 +284,7 @@ const MapComponent: React.FC = () => {
         overlay.setPosition(
           fromLonLat([lineCoordinates.endLon, lineCoordinates.endLat])
         );
-        const { length, azimuth } = calculateLineMetrics(
+        const { length, azimuth } = calculateLineMetricsCallback(
           geometry,
           [lineCoordinates.startLon, lineCoordinates.startLat],
           [lineCoordinates.endLon, lineCoordinates.endLat]
@@ -284,7 +292,7 @@ const MapComponent: React.FC = () => {
         overlay.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
       }
     }
-  }, [lineCoordinates, mode, calculateLineMetrics]);
+  }, [lineCoordinates, mode, calculateLineMetricsCallback]);
 
   useEffect(() => {
     updateLineOnMap();
@@ -301,17 +309,20 @@ const MapComponent: React.FC = () => {
             enableModifyMode(
               mapRef,
               drawRef,
+              overlaysRef,
               drawnFeatures,
               setLineCoordinates,
               setMode,
               updateLineOnMap,
-              selectedFeatureRef
+              selectedFeatureRef,
+              formatLength,
+              calculateAzimuth
             )
           }
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}
           addLineByCoordinates={addLineByCoordinates}
-          updateLineOnMap={updateLineOnMap}
+          editLineCoordinates={enableEditMode}
           mapRef={mapRef}
         />
       </div>

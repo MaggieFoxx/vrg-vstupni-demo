@@ -1,8 +1,7 @@
 import React from "react";
 import { LineCoordinates, LineCoordinatesInput } from "./LineCoordinatesInput";
 import SearchLocation from "./SearchLocation";
-import { Map } from 'ol';
-
+import { Map } from "ol";
 
 interface SideControlMenuProps {
   addMeasureInteraction: () => void;
@@ -12,7 +11,7 @@ interface SideControlMenuProps {
   lineCoordinates: LineCoordinates;
   setLineCoordinates: (coordinates: LineCoordinates) => void;
   addLineByCoordinates: () => void;
-  updateLineOnMap: () => void;
+  editLineCoordinates: () => void;
   mapRef: React.MutableRefObject<null | Map>;
 }
 
@@ -24,8 +23,8 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
   lineCoordinates,
   setLineCoordinates,
   addLineByCoordinates,
-  updateLineOnMap,
-  mapRef
+  editLineCoordinates,
+  mapRef,
 }) => {
   return (
     <div className="h-full bg-gray-800 text-white p-4 flex flex-col justify-between">
@@ -39,10 +38,7 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
           >
             Measure distance
           </button>
-          <button
-            className="btn btn-blue w-full"
-            onClick={addAngleInteraction}
-          >
+          <button className="btn btn-blue w-full" onClick={addAngleInteraction}>
             Measure angle
           </button>
         </div>
@@ -61,7 +57,7 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}
           addLineByCoordinates={addLineByCoordinates}
-          editLineByCoordinates={updateLineOnMap}
+          editLineByCoordinates={editLineCoordinates}
         />
       </div>
     </div>
