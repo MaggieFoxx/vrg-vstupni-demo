@@ -1,5 +1,6 @@
 import React from "react";
-import { LineCoordinates, LineCoordinatesInput } from "./LineCoordinatesInput";
+import { LineCoordinatesInput } from "./LineCoordinatesInput";
+import { LineCoordinates } from "../../types/CoordinatesType"
 import SearchLocation from "./SearchLocation";
 import { Map } from "ol";
 

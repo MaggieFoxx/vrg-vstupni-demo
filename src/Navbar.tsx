@@ -1,6 +1,6 @@
-import React from 'react';
-import { DistanceUnit, AngleUnit } from './UnitsContext';
-import { useUnits } from './UseUnits';
+import React from "react";
+import { useUnits } from "./UseUnits";
+import { AngleUnit, DistanceUnit } from "../types/UnitEnum";
 
 const Navbar: React.FC = () => {
   const { distanceUnit, setDistanceUnit, angleUnit, setAngleUnit } = useUnits();
@@ -8,7 +8,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-gray-800 text-white p-4 flex justify-between items-center">
       <div className="flex items-center">
-        <img src={'./images/mapPin.png'} alt="App Logo" className="h-10 mr-3" />
+        <img src={"./images/mapPin.png"} alt="App Logo" className="h-10 mr-3" />
         <span className="text-4xl font-bold">VR group app</span>
       </div>
       <div className="flex items-center">
@@ -19,8 +19,8 @@ const Navbar: React.FC = () => {
             onChange={(e) => setDistanceUnit(e.target.value as DistanceUnit)}
             className="bg-gray-700 text-white p-2 rounded"
           >
-            <option value="meters">Meters</option>
-            <option value="miles">Miles</option>
+            <option value={DistanceUnit.METERS}>Meters</option>
+            <option value={DistanceUnit.MILES}>Miles</option>
           </select>
         </div>
         <div>
@@ -30,8 +30,8 @@ const Navbar: React.FC = () => {
             onChange={(e) => setAngleUnit(e.target.value as AngleUnit)}
             className="bg-gray-700 text-white p-2 rounded"
           >
-            <option value="degrees">Degrees</option>
-            <option value="radians">Radians</option>
+            <option value={AngleUnit.DEGREES}>Degrees</option>
+            <option value={AngleUnit.RADIANS}>Radians</option>
           </select>
         </div>
       </div>

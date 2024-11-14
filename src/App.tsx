@@ -1,4 +1,4 @@
-import MapComponent from "./MapComponent";
+import MapComponent from "./mapComponents/MapLayer";
 import "./index.css";
 import Navbar from "./Navbar";
 

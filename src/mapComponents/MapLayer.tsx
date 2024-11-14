@@ -11,22 +11,23 @@ import VectorLayer from "ol/layer/Vector";
 import Overlay from "ol/Overlay";
 import { unByKey } from "ol/Observable";
 import { Coordinate } from "ol/coordinate";
-import SideControlMenu from "./SideControlMenu";
-import "./index.css";
-import { useFormattedUnits } from "../services/helperUnitCalculationFunctions";
+import SideControlMenu from "../menuComponents/SideControlMenu";
+import "../index.css";
+import { useFormattedUnits } from "../../services/helperUnitCalculationFunctions";
 import {
   calculateLineMetrics,
   createNewLine,
   getLineCoordinates,
-} from "../services/helperLineFunctions";
+  modifyTooltip,
+} from "../../services/helperLineFunctions";
 import {
   defaultStyle,
   measurementStyle,
   createMeasureTooltipElement,
   createHelpTooltipElement,
-} from "./style";
+} from "../style";
 import { enableModifyMode } from "./MapModifyInteraction";
-import { Mode, getTooltipText } from "../types/ModeEnum";
+import { Mode, getTooltipText } from "../../types/ModeEnum";
 
 const MapComponent: React.FC = () => {
   const [mode, setMode] = useState<Mode>(Mode.IDLE);
@@ -235,15 +236,16 @@ const MapComponent: React.FC = () => {
     drawnFeatures.current.addFeature(line);
     const measureTooltip = createMeasureTooltip(line);
 
-    const { length, azimuth } = calculateLineMetricsCallback(
-      line.getGeometry() as LineString,
-      [lineCoordinates.startLon, lineCoordinates.startLat],
-      [lineCoordinates.endLon, lineCoordinates.endLat]
-    );
-    measureTooltip.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
-    measureTooltip.setPosition(
-      fromLonLat([lineCoordinates.endLon, lineCoordinates.endLat])
-    );
+    modifyTooltip({
+      feature: line,
+      overlaysRef,
+      selectedFeatureRef,
+      coordinates: lineCoordinates,
+      formatLength,
+      calculateAzimuth,
+      mapRef,
+      measureTooltip,
+    });
   };
 
   const enableEditMode = () => {

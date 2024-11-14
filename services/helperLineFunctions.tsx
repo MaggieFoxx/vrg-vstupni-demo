@@ -1,10 +1,11 @@
 import { fromLonLat, toLonLat } from "ol/proj";
 import Feature from "ol/Feature";
-import { LineCoordinates } from "../src/LineCoordinatesInput";
 import { Geometry, LineString } from "ol/geom";
 import { Coordinate } from "ol/coordinate";
 import { Overlay } from "ol";
+import Map from "ol/Map";
 import { MutableRefObject } from "react";
+import { LineCoordinates } from "../types/CoordinatesType";
 
 export const createNewLine = (lineCoordinates: LineCoordinates) => {
   const { startLon, startLat, endLon, endLat } = lineCoordinates;
@@ -45,28 +46,40 @@ export const calculateLineMetrics = (
   return { length, azimuth };
 };
 
-export const modifyTooltip = (
-  feature: Feature<Geometry>,
+export interface ModifyTooltipProps {
+  feature: Feature<Geometry>;
   overlaysRef: MutableRefObject<
     { feature: Feature<Geometry>; overlay: Overlay }[]
-  >,
-  selectedFeatureRef: MutableRefObject<Feature<Geometry> | null>,
-  coordinates: {
-    startLon: number;
-    startLat: number;
-    endLon: number;
-    endLat: number;
-  },
-  formatLength: { (line: LineString): string; (line: LineString): string },
-  calculateAzimuth: {
-    (start: Coordinate, end: Coordinate): string;
-    (start: Coordinate, end: Coordinate): string;
-  }
-) => {
+  >;
+  selectedFeatureRef: MutableRefObject<Feature<Geometry> | null>;
+  coordinates: LineCoordinates;
+  formatLength: (line: LineString) => string;
+  calculateAzimuth: (start: Coordinate, end: Coordinate) => string;
+  mapRef: MutableRefObject<Map | null>;
+  measureTooltip?: Overlay;
+}
+
+export const modifyTooltip = ({
+  feature,
+  overlaysRef,
+  selectedFeatureRef,
+  coordinates,
+  formatLength,
+  calculateAzimuth,
+  mapRef,
+  measureTooltip,
+}: ModifyTooltipProps) => {
   const geometry = feature.getGeometry() as LineString;
-  const overlay = overlaysRef.current.find(
+  let overlay = overlaysRef.current.find(
     (o) => o.feature === selectedFeatureRef.current
   )?.overlay;
+
+  if (!overlay && measureTooltip) {
+    mapRef.current?.addOverlay(measureTooltip);
+    overlaysRef.current.push({ feature, overlay: measureTooltip });
+    overlay = measureTooltip;
+  }
+
   if (overlay) {
     overlay.setPosition(fromLonLat([coordinates.endLon, coordinates.endLat]));
     const { length, azimuth } = calculateLineMetrics(

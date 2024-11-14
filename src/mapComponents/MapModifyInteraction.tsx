@@ -7,9 +7,10 @@ import VectorSource from "ol/source/Vector";
 import {
   getLineCoordinates,
   modifyTooltip,
-} from "../services/helperLineFunctions";
-import { Mode } from "../types/ModeEnum";
+} from "../../services/helperLineFunctions";
+import { Mode } from "../../types/ModeEnum";
 import { Coordinate } from "ol/coordinate";
+import { LineCoordinates } from "../../types/CoordinatesType";
 
 export const enableModifyMode = (
   mapRef: React.MutableRefObject<Map | null>,
@@ -21,14 +22,7 @@ export const enableModifyMode = (
     }[]
   >,
   drawnFeatures: React.MutableRefObject<VectorSource>,
-  setLineCoordinates: React.Dispatch<
-    React.SetStateAction<{
-      startLon: number;
-      startLat: number;
-      endLon: number;
-      endLat: number;
-    }>
-  >,
+  setLineCoordinates: React.Dispatch<React.SetStateAction<LineCoordinates>>,
   setMode: React.Dispatch<React.SetStateAction<Mode>>,
   updateLineOnMap: () => void,
   selectedFeatureRef: React.MutableRefObject<Feature<Geometry> | null>,
@@ -50,18 +44,19 @@ export const enableModifyMode = (
       features.forEach((feature) => {
         const coordinates = getLineCoordinates(feature as Feature<Geometry>);
         if (coordinates) {
-          setLineCoordinates(coordinates);
+          setLineCoordinates(coordinates as LineCoordinates);
           selectedFeatureRef.current = feature as Feature<Geometry>;
           updateLineOnMap();
 
-          modifyTooltip(
+          modifyTooltip({
             feature,
             overlaysRef,
             selectedFeatureRef,
-            coordinates,
+            coordinates: coordinates as LineCoordinates,
             formatLength,
-            calculateAzimuth
-          );
+            calculateAzimuth,
+            mapRef,
+          });
         }
       });
     });

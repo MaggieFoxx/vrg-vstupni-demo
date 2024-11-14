@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-
-export interface LineCoordinates {
-  startLon: number;
-  startLat: number;
-  endLon: number;
-  endLat: number;
-}
+import { LineCoordinates } from "../../types/CoordinatesType"
 
 interface LineCoordinatesInputProps {
   lineCoordinates: LineCoordinates;
