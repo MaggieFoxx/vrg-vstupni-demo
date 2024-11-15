@@ -7,15 +7,23 @@ import Map from "ol/Map";
 import { MutableRefObject } from "react";
 import { LineCoordinates } from "../types/CoordinatesType";
 
-export const createNewLine = (lineCoordinates: LineCoordinates) => {
-  const { startLon, startLat, endLon, endLat } = lineCoordinates;
-  const start = fromLonLat([startLon, startLat]);
-  const end = fromLonLat([endLon, endLat]);
-  const line = new LineString([start, end]);
+export const hasAllCoordinatesSet = (
+  lineCoordinates: LineCoordinates
+): boolean => {
+  return Object.values(lineCoordinates).every((value) => value !== null);
+};
 
-  return new Feature({
-    geometry: line,
-  });
+export const createNewLine = (lineCoordinates: LineCoordinates) => {
+  if (hasAllCoordinatesSet(lineCoordinates)) {
+    const { startLon, startLat, endLon, endLat } = lineCoordinates;
+    const start = fromLonLat([startLon!, startLat!]);
+    const end = fromLonLat([endLon!, endLat!]);
+    const line = new LineString([start, end]);
+
+    return new Feature({
+      geometry: line,
+    });
+  }
 };
 
 export const getLineCoordinates = (feature: Feature<Geometry>) => {
@@ -80,12 +88,12 @@ export const modifyTooltip = ({
     overlay = measureTooltip;
   }
 
-  if (overlay) {
-    overlay.setPosition(fromLonLat([coordinates.endLon, coordinates.endLat]));
+  if (overlay && hasAllCoordinatesSet(coordinates)) {
+    overlay.setPosition(fromLonLat([coordinates.endLon!, coordinates.endLat!]));
     const { length, azimuth } = calculateLineMetrics(
       geometry,
-      [coordinates.startLon, coordinates.startLat],
-      [coordinates.endLon, coordinates.endLat],
+      [coordinates.startLon!, coordinates.startLat!],
+      [coordinates.endLon!, coordinates.endLat!],
       formatLength,
       calculateAzimuth
     );

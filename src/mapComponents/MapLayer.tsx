@@ -18,6 +18,7 @@ import {
   calculateLineMetrics,
   createNewLine,
   getLineCoordinates,
+  hasAllCoordinatesSet,
   modifyTooltip,
 } from "../../services/helperLineFunctions";
 import {
@@ -28,18 +29,21 @@ import {
 } from "../style";
 import { enableModifyMode } from "./MapModifyInteraction";
 import { Mode, getTooltipText } from "../../types/ModeEnum";
+import Modify from "ol/interaction/Modify";
+import {
+  defaultLineCoordinates,
+  LineCoordinates,
+} from "../../types/CoordinatesType";
 
 const MapComponent: React.FC = () => {
   const [mode, setMode] = useState<Mode>(Mode.IDLE);
-  const [lineCoordinates, setLineCoordinates] = useState({
-    startLon: 0,
-    startLat: 0,
-    endLon: 0,
-    endLat: 0,
-  });
+  const [lineCoordinates, setLineCoordinates] = useState<LineCoordinates>(
+    defaultLineCoordinates
+  );
 
   const mapRef = useRef<Map | null>(null);
   const drawRef = useRef<Draw | null>(null);
+  const modifyRef = useRef<Modify | null>(null);
   const helpTooltipRef = useRef<Overlay | null>(null);
   const helpTooltipElementRef = useRef<HTMLDivElement | null>(null);
   const drawnFeatures = useRef<VectorSource>(new VectorSource());
@@ -210,7 +214,14 @@ const MapComponent: React.FC = () => {
         mapRef.current.removeInteraction(drawRef.current);
         drawRef.current = null;
       }
-      mapRef.current.on("singleclick", handleDeleteFeature);
+      if (modifyRef.current) {
+        mapRef.current.removeInteraction(modifyRef.current);
+        modifyRef.current = null;
+      }
+      mapRef.current.on("click", (evt) => {
+        handleDeleteFeature(evt);
+        setLineCoordinates(defaultLineCoordinates);
+      });
     }
     setMode(Mode.IDLE);
   };
@@ -232,20 +243,23 @@ const MapComponent: React.FC = () => {
   };
 
   const addLineByCoordinates = () => {
+    setLineCoordinates(lineCoordinates);
     const line = createNewLine(lineCoordinates);
-    drawnFeatures.current.addFeature(line);
-    const measureTooltip = createMeasureTooltip(line);
+    if (line) {
+      drawnFeatures.current.addFeature(line);
+      const measureTooltip = createMeasureTooltip(line);
 
-    modifyTooltip({
-      feature: line,
-      overlaysRef,
-      selectedFeatureRef,
-      coordinates: lineCoordinates,
-      formatLength,
-      calculateAzimuth,
-      mapRef,
-      measureTooltip,
-    });
+      modifyTooltip({
+        feature: line,
+        overlaysRef,
+        selectedFeatureRef,
+        coordinates: lineCoordinates,
+        formatLength,
+        calculateAzimuth,
+        mapRef,
+        measureTooltip,
+      });
+    }
   };
 
   const enableEditMode = () => {
@@ -274,24 +288,33 @@ const MapComponent: React.FC = () => {
   const updateLineOnMap = useCallback(() => {
     if (selectedFeatureRef.current && mode === Mode.EDITING) {
       const geometry = selectedFeatureRef.current.getGeometry() as LineString;
-      geometry.setCoordinates([
-        fromLonLat([lineCoordinates.startLon, lineCoordinates.startLat]),
-        fromLonLat([lineCoordinates.endLon, lineCoordinates.endLat]),
-      ]);
+      if (hasAllCoordinatesSet(lineCoordinates)) {
+        geometry.setCoordinates([
+          fromLonLat([lineCoordinates.startLon!, lineCoordinates.startLat!]),
+          fromLonLat([lineCoordinates.endLon!, lineCoordinates.endLat!]),
+        ]);
+      }
 
       const overlay = overlaysRef.current.find(
         (o) => o.feature === selectedFeatureRef.current
       )?.overlay;
       if (overlay) {
-        overlay.setPosition(
-          fromLonLat([lineCoordinates.endLon, lineCoordinates.endLat])
-        );
-        const { length, azimuth } = calculateLineMetricsCallback(
-          geometry,
-          [lineCoordinates.startLon, lineCoordinates.startLat],
-          [lineCoordinates.endLon, lineCoordinates.endLat]
-        );
-        overlay.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
+        if (hasAllCoordinatesSet(lineCoordinates)) {
+          overlay.setPosition(
+            fromLonLat([lineCoordinates.endLon!, lineCoordinates.endLat!])
+          );
+        }
+        if (hasAllCoordinatesSet(lineCoordinates)) {
+          const { length, azimuth } = calculateLineMetricsCallback(
+            geometry,
+            [lineCoordinates.startLon!, lineCoordinates.startLat!],
+            [lineCoordinates.endLon!, lineCoordinates.endLat!]
+          );
+          overlay.setPosition(
+            fromLonLat([lineCoordinates.endLon!, lineCoordinates.endLat!])
+          );
+          overlay.getElement()!.innerHTML = `${length} | Azimuth: ${azimuth}`;
+        }
       }
     }
   }, [lineCoordinates, mode, calculateLineMetricsCallback]);
@@ -308,9 +331,10 @@ const MapComponent: React.FC = () => {
           addAngleInteraction={() => addInteraction("angle")}
           enableDeleteMode={enableDeleteMode}
           enableEditMode={() =>
-            enableModifyMode(
+            enableModifyMode({
               mapRef,
               drawRef,
+              modifyRef,
               overlaysRef,
               drawnFeatures,
               setLineCoordinates,
@@ -318,8 +342,8 @@ const MapComponent: React.FC = () => {
               updateLineOnMap,
               selectedFeatureRef,
               formatLength,
-              calculateAzimuth
-            )
+              calculateAzimuth,
+            })
           }
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}

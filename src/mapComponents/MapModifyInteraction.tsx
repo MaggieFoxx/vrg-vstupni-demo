@@ -1,5 +1,4 @@
 import { Map, Overlay } from "ol";
-import Modify from "ol/interaction/Modify";
 import { Feature } from "ol";
 import { Geometry, LineString } from "ol/geom";
 import Draw from "ol/interaction/Draw";
@@ -11,24 +10,40 @@ import {
 import { Mode } from "../../types/ModeEnum";
 import { Coordinate } from "ol/coordinate";
 import { LineCoordinates } from "../../types/CoordinatesType";
+import Modify from "ol/interaction/Modify";
 
-export const enableModifyMode = (
-  mapRef: React.MutableRefObject<Map | null>,
-  drawRef: React.MutableRefObject<Draw | null>,
+interface ModifyModeProps {
+  mapRef: React.MutableRefObject<Map | null>;
+  drawRef: React.MutableRefObject<Draw | null>;
+  modifyRef: React.MutableRefObject<Modify | null>;
   overlaysRef: React.MutableRefObject<
     {
       feature: Feature<Geometry>;
       overlay: Overlay;
     }[]
-  >,
-  drawnFeatures: React.MutableRefObject<VectorSource>,
-  setLineCoordinates: React.Dispatch<React.SetStateAction<LineCoordinates>>,
-  setMode: React.Dispatch<React.SetStateAction<Mode>>,
-  updateLineOnMap: () => void,
-  selectedFeatureRef: React.MutableRefObject<Feature<Geometry> | null>,
-  formatLength: (line: LineString) => string,
-  calculateAzimuth: (start: Coordinate, end: Coordinate) => string
-) => {
+  >;
+  drawnFeatures: React.MutableRefObject<VectorSource>;
+  setLineCoordinates: React.Dispatch<React.SetStateAction<LineCoordinates>>;
+  setMode: React.Dispatch<React.SetStateAction<Mode>>;
+  updateLineOnMap: () => void;
+  selectedFeatureRef: React.MutableRefObject<Feature<Geometry> | null>;
+  formatLength: (line: LineString) => string;
+  calculateAzimuth: (start: Coordinate, end: Coordinate) => string;
+}
+
+export const enableModifyMode = ({
+  mapRef,
+  drawRef,
+  modifyRef,
+  overlaysRef,
+  drawnFeatures,
+  setLineCoordinates,
+  setMode,
+  updateLineOnMap,
+  selectedFeatureRef,
+  formatLength,
+  calculateAzimuth,
+}: ModifyModeProps) => {
   setMode(Mode.MODIFYING);
 
   if (mapRef.current) {
@@ -38,6 +53,7 @@ export const enableModifyMode = (
     }
     const modify = new Modify({ source: drawnFeatures.current });
     mapRef.current.addInteraction(modify);
+    modifyRef.current = modify;
 
     modify.on("modifyend", (evt) => {
       const features = evt.features.getArray();

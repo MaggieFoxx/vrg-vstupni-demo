@@ -1,6 +1,6 @@
 import React from "react";
-import { LineCoordinatesInput } from "./LineCoordinatesInput";
-import { LineCoordinates } from "../../types/CoordinatesType"
+import { LineCoordinatesForm } from "./LineCoordinatesForm";
+import { LineCoordinates } from "../../types/CoordinatesType";
 import SearchLocation from "./SearchLocation";
 import { Map } from "ol";
 
@@ -54,7 +54,7 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
         <h1 className="text-xl font-semibold mb-5">
           New measurement by coordinates:
         </h1>
-        <LineCoordinatesInput
+        <LineCoordinatesForm
           lineCoordinates={lineCoordinates}
           setLineCoordinates={setLineCoordinates}
           addLineByCoordinates={addLineByCoordinates}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { LineCoordinates } from "../../types/CoordinatesType"
+import { LineCoordinates } from "../../types/CoordinatesType";
+import { CoordinateInput } from "./LineCoordinateInput";
 
 interface LineCoordinatesInputProps {
   lineCoordinates: LineCoordinates;
@@ -8,7 +9,7 @@ interface LineCoordinatesInputProps {
   editLineByCoordinates: () => void;
 }
 
-export const LineCoordinatesInput: React.FC<LineCoordinatesInputProps> = ({
+export const LineCoordinatesForm: React.FC<LineCoordinatesInputProps> = ({
   lineCoordinates,
   setLineCoordinates,
   addLineByCoordinates,
@@ -38,43 +39,31 @@ export const LineCoordinatesInput: React.FC<LineCoordinatesInputProps> = ({
     <form onSubmit={handleSubmit}>
       <div className="flex flex-col lg:flex-row">
         <div className="flex flex-col mr-4">
-          <label className="mb-2">Start Longitude:</label>
-          <input
-            type="text"
+          <CoordinateInput
+            label="Start Longitude"
             name="startLon"
             value={coordinates.startLon}
             onChange={handleChange}
-            placeholder="Start Longitude"
-            className="border p-2 mb-4 w-full text-black"
           />
-          <label className="mb-2">Start Latitude:</label>
-          <input
-            type="text"
+          <CoordinateInput
+            label="Start Latitude"
             name="startLat"
             value={coordinates.startLat}
             onChange={handleChange}
-            placeholder="Start Latitude"
-            className="border p-2 mb-4  w-full text-black"
           />
         </div>
         <div className="flex flex-col">
-          <label className="mb-2">End Longitude:</label>
-          <input
-            type="text"
+          <CoordinateInput
+            label="End Longitude"
             name="endLon"
             value={coordinates.endLon}
             onChange={handleChange}
-            placeholder="End Longitude"
-            className="border p-2 mb-4  w-full text-black"
           />
-          <label className="mb-2">End Latitude:</label>
-          <input
-            type="text"
+          <CoordinateInput
+            label="End Latitude"
             name="endLat"
             value={coordinates.endLat}
             onChange={handleChange}
-            placeholder="End Latitude"
-            className="border p-2 mb-4 w-full text-black"
           />
         </div>
       </div>
