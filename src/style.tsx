@@ -38,6 +38,15 @@ export const defaultStyle = new Style({
   }),
 });
 
+export const tooltipStyles = {
+  backgroundColor: "#f9f9f9",
+  color: "#333",
+  padding: "10px 15px",
+  borderRadius: "8px",
+  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  maxWidth: "180px",
+};
+
 export const createMeasureTooltipElement = (): Overlay => {
   const measureTooltipElement = document.createElement("div");
   measureTooltipElement.className = "ol-tooltip ol-tooltip-measure";

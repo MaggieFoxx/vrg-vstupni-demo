@@ -8,7 +8,7 @@ export enum Mode {
 }
 
 export const getTooltipText = (mode: Mode): string => {
-  let helpMsg = "Click on the button to choose functionality";
+  let helpMsg = "";
   switch (mode) {
     case Mode.DRAWING:
       helpMsg = "Click to continue drawing the line";
@@ -16,8 +16,8 @@ export const getTooltipText = (mode: Mode): string => {
     case Mode.DELETING:
       helpMsg = "Click on a line to delete it";
       break;
-    case Mode.EDITING:
-      helpMsg = "Click on a line to edit";
+    case Mode.MODIFYING:
+      helpMsg = "Click on a line to modify";
       break;
     case Mode.MEASURING_ANGLE:
       helpMsg = "Draw two lines to measure the angle";

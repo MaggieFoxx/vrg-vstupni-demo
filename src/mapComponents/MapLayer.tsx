@@ -223,7 +223,6 @@ const MapComponent: React.FC = () => {
         setLineCoordinates(defaultLineCoordinates);
       });
     }
-    setMode(Mode.IDLE);
   };
 
   const handleDeleteFeature = (evt: MapBrowserEvent<UIEvent>) => {
@@ -240,6 +239,7 @@ const MapComponent: React.FC = () => {
         }
       }
     });
+    setMode(Mode.IDLE);
   };
 
   const addLineByCoordinates = () => {

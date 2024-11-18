@@ -3,6 +3,8 @@ import { LineCoordinatesForm } from "./LineCoordinatesForm";
 import { LineCoordinates } from "../../types/CoordinatesType";
 import SearchLocation from "./SearchLocation";
 import { Map } from "ol";
+import { TooltipButton } from "./TooltipButton";
+import { tooltipTexts } from "../TooltipTexts";
 
 interface SideControlMenuProps {
   addMeasureInteraction: () => void;
@@ -44,12 +46,23 @@ const SideControlMenu: React.FC<SideControlMenuProps> = ({
           </button>
         </div>
       </div>
-      <button className="btn btn-red w-full mb-2" onClick={enableDeleteMode}>
-        Delete measurement
-      </button>
-      <button className="btn btn-yellow w-full mb-2" onClick={enableEditMode}>
-        Edit line
-      </button>
+
+      <TooltipButton
+        type="button"
+        buttonClass="btn btn-red w-full mb-2"
+        onClick={enableDeleteMode}
+        tooltipId="delete-line-tooltip"
+        tooltipContent={tooltipTexts.delete}
+        buttonText="Delete measurement"
+      ></TooltipButton>
+      <TooltipButton
+        type="button"
+        buttonClass="btn btn-yellow w-full mb-2"
+        onClick={enableEditMode}
+        tooltipId="interactive-edit-line-tooltip"
+        tooltipContent={tooltipTexts.edit}
+        buttonText="Edit line"
+      ></TooltipButton>
       <div>
         <h1 className="text-xl font-semibold mb-5">
           New measurement by coordinates:

@@ -3,7 +3,7 @@ import { LineCoordinates } from "../../types/CoordinatesType";
 export const CoordinateInput: React.FC<{
   label: string;
   name: keyof LineCoordinates;
-  value: number | null;
+  value: number | string | null;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }> = ({ label, name, value, onChange }) => (
   <div className="flex flex-col mr-4">

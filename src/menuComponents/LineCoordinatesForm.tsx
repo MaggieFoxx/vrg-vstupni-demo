@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { LineCoordinates } from "../../types/CoordinatesType";
 import { CoordinateInput } from "./LineCoordinateInput";
+import { TooltipButton } from "./TooltipButton";
+import { tooltipTexts } from "../TooltipTexts";
 
 interface LineCoordinatesInputProps {
   lineCoordinates: LineCoordinates;
@@ -68,23 +70,25 @@ export const LineCoordinatesForm: React.FC<LineCoordinatesInputProps> = ({
         </div>
       </div>
       <div className="flex py-3">
-        <button
+        <TooltipButton
           type="submit"
-          className="btn btn-green w-full"
+          buttonClass="btn btn-green w-full relative text-lg py-2"
           onClick={addLineByCoordinates}
-        >
-          Add Line
-        </button>
-        <button
+          tooltipId="add-line-tooltip"
+          tooltipContent={tooltipTexts.addLineButton}
+          buttonText="Add Line"
+        />
+        <TooltipButton
           type="button"
-          className="btn btn-yellow ml-4 w-full"
+          buttonClass="btn btn-yellow ml-4 w-full relative text-lg py-2"
           onClick={() => {
             setLineCoordinates(coordinates);
             editLineByCoordinates();
           }}
-        >
-          Change line coordinates
-        </button>
+          tooltipId="edit-line-tooltip"
+          tooltipContent={tooltipTexts.editLineButton}
+          buttonText="Change line coordinates"
+        />
       </div>
     </form>
   );
